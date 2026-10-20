@@ -1,0 +1,16 @@
+compilar:
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\compilar.ps1"
+
+pruebas de errores semánticos:
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_error_redeclaracion.txt"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_error_no_declarada.txt"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_error_tipo_asignacion.txt"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_error_tipo_operacion.txt"
+
+pruebas de C3D:
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_c3d_aritmetica.txt"
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_c3d_bool.txt"
+
+mostrar solo C3D:
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\ejecutar.ps1" ".\src\prueba_c3d_aritmetica.txt" --c3d
+
