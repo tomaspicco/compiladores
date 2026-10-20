@@ -1,0 +1,5 @@
+[01] a = true
+[02] b = false
+[03] a = b
+[04] return a
+

@@ -1,0 +1,47 @@
+cd ~/Desktop/DECOMPILER/COMPILADOR_JFLEX
+pwd
+java -cp "out;lib/java-cup-11b-runtime.jar" ar.edu.unvm.compiladores.Main src/programa_prueba.txt
+
+
+EJECUCION PUNTO 3
+RECOMPILAR
+
+cd ~/Desktop/DECOMPILER/COMPILADOR_JFLEX
+javac -cp lib/java-cup-11b-runtime.jar -d out $(find src/main/java -name "*.java")
+
+ejecutar
+
+java -cp "out;lib/java-cup-11b-runtime.jar" ar.edu.unvm.compiladores.TestLexer src/programa_prueba.txt
+
+
+EJECUCION PUNTO 4
+
+java -cp "out;lib/java-cup-11b-runtime.jar" ar.edu.unvm.compiladores.Main src/programa_prueba.txt
+
+
+BORRAR VIEJOS
+rm -f src/main/java/ar/edu/unvm/compiladores/parser/Parser.java
+rm -f src/main/java/ar/edu/unvm/compiladores/parser/sym.java
+rm -f src/main/java/ar/edu/unvm/compiladores/lexer/Lexer.java
+
+java -cp ~/Desktop/DECOMPILER/COMPILADOR_JFLEX/lib/java-cup-11b-2015.03.26.jar java_cup.Main -parser Parser < ~/Desktop/DECOMPILER/COMPILADOR_JFLEX/src/main/cup/ar/edu/unvm/compiladores/parser/Parser.cup
+
+
+LEXER
+
+java -jar lib/jflex-1.9.1/lib/jflex-full-1.9.1.jar -d src/main/java/ar/edu/unvm/compiladores/lexer src/main/jflex/ar/edu/unvm/compiladores/lexer/Lexer.flex
+
+RECOMPILAR TODO
+
+javac -cp lib/java-cup-11b-runtime.jar -d out $(find src/main/java -name "*.java")
+
+
+BUSCAR 
+find . -maxdepth 1 -name "*.java"
+
+MOVER
+mv Parser.java sym.java src/main/java/ar/edu/unvm/compiladores/parser/
+
+
+
+

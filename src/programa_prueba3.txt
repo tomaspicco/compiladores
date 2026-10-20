@@ -1,0 +1,18 @@
+int main(){
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+
+a = 2+4; 
+return a;
+b = 5*(6-3)+1; 
+return b;
+c = 6/3*5+20;
+return c; 
+d = 4*76/31;
+return d;
+e = 1-1-1;
+return e;
+}

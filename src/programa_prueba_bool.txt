@@ -1,0 +1,9 @@
+bool main(){
+    bool flag;
+    bool aux;
+    int contador;
+    flag = true;
+    aux = false;
+    contador = 10;
+    return flag;
+}

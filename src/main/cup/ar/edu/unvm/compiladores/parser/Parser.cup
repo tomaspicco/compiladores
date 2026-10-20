@@ -1,0 +1,164 @@
+package ar.edu.unvm.compiladores.parser;
+
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import java.util.List;
+import ar.edu.unvm.compiladores.ast.*;
+
+parser code {:
+    public ProgramNode ast;
+
+    public ProgramNode getAST() {
+        return this.ast;
+    }
+
+    public void setAST(ProgramNode ast) {
+        this.ast = ast;
+    }
+
+    public void syntax_error(Symbol cur_token) {
+        System.err.println("Error de sintaxis en linea " + cur_token.left +
+                           ", columna " + cur_token.right +
+                           ". Token no esperado (codigo: " + cur_token.sym + ").");
+    }
+
+    public void unrecovered_syntax_error(Symbol cur_token) throws Exception {
+        throw new Exception("Error sintactico fatal en linea " + cur_token.left +
+                            ", columna " + cur_token.right +
+                            ". No se pudo recuperar el analisis.");
+    }
+:};
+
+/* ===================================================================
+   TERMINALES (Tokens generados por el Lexer)
+   =================================================================== */
+terminal VOID, INT, BOOL, MAIN, RETURN, TRUE, FALSE;
+terminal MAS, MENOS, POR, DIV, ASIGNACION;
+terminal PUNTOYCOMA, PAR_IZQ, PAR_DER, LLAVE_IZQ, LLAVE_DER;
+terminal Integer NRO;
+terminal String ID;
+
+/* ===================================================================
+   NO TERMINALES (Con sus tipos de AST asociados)
+   =================================================================== */
+non terminal ProgramNode programa;
+non terminal Type tipo_retorno;
+non terminal List<VarDeclNode> declaraciones;
+non terminal VarDeclNode declaracion;
+non terminal Type tipo;
+non terminal List<StatementNode> sentencias;
+non terminal StatementNode sentencia;
+non terminal AssignStmtNode asignacion;
+non terminal ReturnStmtNode retorno;
+non terminal ExprNode expr;
+
+/* ===================================================================
+   PRECEDENCIA
+   =================================================================== */
+precedence left MAS, MENOS;
+precedence left POR, DIV;
+
+start with programa;
+
+/* ===================================================================
+   REGLAS GRAMATICALES Y CONSTRUCCION DEL AST
+   =================================================================== */
+
+/* Programa -> TipoRetorno main ( ) { Declaraciones Sentencias } */
+programa ::= tipo_retorno:tr MAIN PAR_IZQ PAR_DER LLAVE_IZQ declaraciones:d sentencias:s LLAVE_DER
+             {:
+                ProgramNode prog = new ProgramNode(tr, "main", d, s, trleft, trright);
+                parser.ast = prog;
+                RESULT = prog;
+             :}
+           ;
+
+/* TipoRetorno -> void | int | bool */
+tipo_retorno ::= VOID  {: RESULT = Type.VOID; :}
+               | INT   {: RESULT = Type.INT; :}
+               | BOOL  {: RESULT = Type.BOOL; :}
+               ;
+
+/* Declaraciones -> Declaraciones Declaracion | Declaracion */
+declaraciones ::= declaraciones:list declaracion:d
+                  {:
+                     list.add(d);
+                     RESULT = list;
+                  :}
+                | declaracion:d
+                  {:
+                     List<VarDeclNode> list = new ArrayList<VarDeclNode>();
+                     list.add(d);
+                     RESULT = list;
+                  :}
+                ;
+
+/* Declaracion -> Tipo id ; */
+declaracion ::= tipo:t ID:nombre PUNTOYCOMA
+                {:
+                   RESULT = new VarDeclNode(t, nombre, tleft, tright);
+                :}
+              ;
+
+/* Tipo -> int | bool */
+tipo ::= INT   {: RESULT = Type.INT; :}
+       | BOOL  {: RESULT = Type.BOOL; :}
+       ;
+
+/* Sentencias -> Sentencias Sentencia | Sentencia */
+sentencias ::= sentencias:list sentencia:s
+               {:
+                  list.add(s);
+                  RESULT = list;
+               :}
+             | sentencia:s
+               {:
+                  List<StatementNode> list = new ArrayList<StatementNode>();
+                  list.add(s);
+                  RESULT = list;
+               :}
+             ;
+
+/* Sentencia -> Asignacion | Retorno */
+sentencia ::= asignacion:a {: RESULT = a; :}
+            | retorno:r    {: RESULT = r; :}
+            ;
+
+/* Asignacion -> id = expr ; */
+asignacion ::= ID:nombre ASIGNACION expr:e PUNTOYCOMA
+               {:
+                  RESULT = new AssignStmtNode(nombre, e, nombreleft, nombreright);
+               :}
+             ;
+
+/* Retorno -> return expr ; | return ; */
+retorno ::= RETURN:r expr:e PUNTOYCOMA
+            {:
+               RESULT = new ReturnStmtNode(e, rleft, rright);
+            :}
+          | RETURN:r PUNTOYCOMA
+            {:
+               RESULT = new ReturnStmtNode(null, rleft, rright);
+            :}
+          ;
+
+/* Expresiones */
+expr ::= expr:e1 MAS expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.ADD, e1, e2, e1left, e1right); :}
+       | expr:e1 MENOS expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.SUB, e1, e2, e1left, e1right); :}
+       | expr:e1 POR expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.MUL, e1, e2, e1left, e1right); :}
+       | expr:e1 DIV expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.DIV, e1, e2, e1left, e1right); :}
+       | PAR_IZQ expr:e PAR_DER
+         {: RESULT = e; :}
+       | NRO:n
+         {: RESULT = new NumberLiteralNode(n, nleft, nright); :}
+       | TRUE:t
+         {: RESULT = new BooleanLiteralNode(true, tleft, tright); :}
+       | FALSE:f
+         {: RESULT = new BooleanLiteralNode(false, fleft, fright); :}
+       | ID:nombre
+         {: RESULT = new VarUseNode(nombre, nombreleft, nombreright); :}
+       ;
