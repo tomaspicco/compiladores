@@ -2,7 +2,7 @@
 if "%~1"=="" (
     echo Uso: ejecutar.bat ^<ruta_archivo_prueba^> [opciones]
     echo Ejemplo: ejecutar.bat src\programa_prueba.txt
-    echo Opciones: --all, --ast, --semantic, --eval, --c3d, --asm
+    echo Opciones: --all, --ast, --semantic, --eval, --c3d, --asm, --gnu, --pseudo
     exit /b 1
 )
 

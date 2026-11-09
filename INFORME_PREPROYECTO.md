@@ -1,36 +1,41 @@
 # Universidad Nacional de Villa Mercedes (UNVM)
 ## Escuela de Ingeniería y Ciencias Ambientales - Compiladores
-### Informe Técnico del Proyecto - Actualizado según Reunión de Cátedra (13 oct 2026)
+### Informe Técnico del Proyecto - Compilador Modular JFlex + CUP
 
 ---
 
-## 1. Resumen de Decisiones y Requisitos Acordados (Reunión 13 Oct 2026)
+## 1. Resumen de Decisiones y Requisitos de Cátedra
 
-Durante la sesión de revisión con la docente Bianca Guadalupe Torres Gil se acordaron las siguientes directivas de diseño e implementación:
+El compilador ha sido diseñado e implementado siguiendo las directivas formales de la cátedra de Compiladores:
 
 1. **Separación de nodos para declaración y uso en el AST**:
-   - Se estableció diferenciar en la jerarquía del árbol sintáctico cuándo una variable se declara (`VarDeclNode`) de cuándo se usa en una expresión (`VarUseNode` / `VariableRefNode`).
+   - Se diferencia en la jerarquía del árbol sintáctico cuándo una variable se declara (`VarDeclNode`) de cuándo se usa en una expresión (`VarUseNode` / `VariableRefNode`).
    - Ambas instancias se enlazan directamente con la misma entidad en memoria (`Symbol`), preservando su tipo, nombre y valor.
 
 2. **Validación de tres errores de compilación principales**:
-   - El analizador semántico debe verificar y reportar de forma explícita exactamente tres categorías de errores:
+   - El analizador semántico verifica y reporta de forma explícita exactamente tres categorías de errores:
      1. **Variables redeclaradas**: Detección de identificadores duplicados en el mismo ámbito (`[VARIABLE REDECLARADA]`).
      2. **Variables no declaradas**: Detección de identificadores utilizados o asignados sin declaración previa (`[VARIABLE NO DECLARADA]`).
      3. **Errores de tipo**: Incompatibilidad de tipos en asignaciones, operadores aritméticos sobre booleanos o discrepancias en el valor de retorno de la función `main()` (`[ERROR DE TIPO]`).
 
 3. **Código de Tres Direcciones (C3D)**:
-   - **Vector dinámico de instrucciones**: Implementación de la clase `CodigoTresDirecciones` que almacena secuencialmente un vector dinámico de instrucciones (`Vector<Instruccion3D>`).
-   - **Clase instrucción**: Definición de la clase `Instruccion3D`, donde cada instrucción contiene su código de operación (`Operador3D`) y punteros directos a los objetos `Symbol` (operando 1, operando 2 y resultado), preservando la información semántica sin degradar a texto plano.
-   - **Variables temporales**: Creación de variables auxiliares temporales (`T1, T2, T3, ...`) para almacenar los resultados parciales de las operaciones intermedias, aclarando que los valores intermedios no pueden sobreescribir constantes sino variables temporales.
+   - **Vector dinámico de instrucciones**: Clase `CodigoTresDirecciones` que almacena un vector dinámico de instrucciones (`Vector<Instruccion3D>`).
+   - **Clase instrucción**: Clase `Instruccion3D` donde cada instrucción contiene su código de operación (`Operador3D`) y punteros directos a los objetos `Symbol` (operando 1, operando 2 y resultado), preservando la información semántica.
+   - **Variables temporales**: Creación de variables auxiliares temporales (`T1, T2, T3, ...`) para almacenar los resultados parciales de las operaciones intermedias.
    - **Generador de C3D (`GeneradorC3D`)**: Recorrido del AST en post-orden (bottom-up: desde las hojas hacia la raíz), asegurando que las subexpresiones se resuelvan antes de procesar las operaciones compuestas y las asignaciones.
-   - **Cuádruplas e Intérprete C3D**: Representación en forma de cuádruplas `(OP, ARG1, ARG2, RES)` y un evaluador (`InterpreteC3D`) que recorre secuencialmente la lista de instrucciones para simular la ejecución.
-   - **Programas de prueba**: Creación de programas específicos para forzar y validar cada error de compilación y la generación correcta del código intermedio.
+   - **Cuádruplas e Intérprete C3D**: Representación en forma de cuádruplas `(OP, ARG1, ARG2, RES)` y evaluador (`InterpreteC3D`) que recorre secuencialmente la lista de instrucciones para simular la ejecución.
+
+4. **Generación de Assembly GNU x86-64 (64 bits) a partir de C3D**:
+   - Traducción instrucción por instrucción del código de tres direcciones a lenguaje ensamblador GNU x86-64 (sintaxis AT&T para `as` / `gcc`).
+   - Asignación de marco de pila (stack frame) con `enter $(8 * N), $0` para variables locales y temporales.
+   - Manipulación de expresiones mediante los registros temporales `%r10` y `%r11`.
+   - Convención de llamadas x86-64 System V / GNU: colocación del valor de retorno en `%rax` y epílogo con `leave` y `ret`.
 
 ---
 
 ## 2. Arquitectura del Compilador
 
-El compilador sigue una arquitectura de múltiples fases integradas:
+El compilador sigue una arquitectura modular en pipeline:
 
 ```
                   Código Fuente (.txt)
@@ -54,9 +59,12 @@ El compilador sigue una arquitectura de múltiples fases integradas:
            ┌───────────────┼───────────────┐
            ▼               ▼               ▼
      [Interpreter]   [GeneradorC3D]  [PseudoAssemblyGenerator]
-       (AST Eval)      (Vector C3D)    (Seudo-Assembly)
+       (AST Eval)      (Vector C3D)    (Seudo-Assembly AST)
                            │
-                 [InterpreteC3D]
+                   ┌───────┴───────┐
+                   ▼               ▼
+            [InterpreteC3D]  [GnuAssemblyGenerator]
+            (Simulacion C3D) (Assembly GNU x86-64)
 ```
 
 ### Paquetes del Sistema
@@ -67,11 +75,13 @@ El compilador sigue una arquitectura de múltiples fases integradas:
 - `ar.edu.unvm.compiladores.semantic`: `SemanticAnalyzer` con control de las 3 categorías de errores.
 - `ar.edu.unvm.compiladores.c3d`: Código intermedio de tres direcciones (`Operador3D`, `Instruccion3D`, `CodigoTresDirecciones`, `GeneradorC3D`, `InterpreteC3D`).
 - `ar.edu.unvm.compiladores.interpreter`: Intérprete y evaluador recursivo sobre el AST (`Interpreter`).
-- `ar.edu.unvm.compiladores.codegen`: Generador de código seudo-ensamblador (`PseudoAssemblyGenerator`).
+- `ar.edu.unvm.compiladores.codegen`:
+  - `PseudoAssemblyGenerator`: Generador de código seudo-ensamblador basado en registros desde el AST.
+  - `GnuAssemblyGenerator`: Generador de código ensamblador real GNU x86-64 a partir de C3D instrucción por instrucción.
 
 ---
 
-## 3. Detalle de Implementación de las Decisiones de Cátedra
+## 3. Detalle de Implementación
 
 ### A. Jerarquía Separada: `VarDeclNode` vs `VarUseNode`
 - **`VarDeclNode`**: Representa la sentencia de declaración (`int x;`). Almacena el `Type`, el identificador `id` y mantiene una referencia `Symbol symbol` asignada durante el análisis semántico.
@@ -104,113 +114,47 @@ El `SemanticAnalyzer` clasifica y formatea los errores en 3 categorías:
    ```
 
 ### C. Código de Tres Direcciones (C3D)
-- **Instrucción de Tres Direcciones (`Instruccion3D`)**:
-  - Contiene: `Operador3D operador`, `Symbol operando1`, `Symbol operando2` y `Symbol resultado`.
-  - Método `toString()`: Genera formato `T1 = a + b`, `x = T1`, `return x`.
-  - Método `toCuadrupla()`: Genera formato tupla `(ADD, a, b, T1)`.
-- **Estructura Contenedora (`CodigoTresDirecciones`)**:
-  - Almacena las instrucciones en un `Vector<Instruccion3D>` dinámico tal como requirió la cátedra.
-  - Ofrece métodos `insertar()`, `imprimir()` y `imprimirCuadruplas()`.
-- **Generador (`GeneradorC3D`)**:
-  - Recorrido bottom-up (de las hojas hacia la raíz): para evaluar `z = x + y * 2 + (10 - x) / 2`:
-    ```
-    [01] x = 4
-    [02] y = 3
-    [03] T1 = y * 2
-    [04] T2 = x + T1
-    [05] T3 = 10 - x
-    [06] T4 = T3 / 2
-    [07] T5 = T2 + T4
-    [08] z = T5
-    [09] return z
-    ```
-  - Cuádruplas emitidas:
-    ```
-    Nro    Op       Arg1     Arg2     Res     
-    ----------------------------------------
-    [01]  ASSIGN   4        -        x       
-    [02]  ASSIGN   3        -        y       
-    [03]  MUL      y        2        T1      
-    [04]  ADD      x        T1       T2      
-    [05]  SUB      10       x        T3      
-    [06]  DIV      T3       2        T4      
-    [07]  ADD      T2       T4       T5      
-    [08]  ASSIGN   T5       -        z       
-    [09]  RET      z        -        -       
-    ```
+- Recorrido bottom-up del AST mediante `GeneradorC3D`.
+- Generación de temporales sucesivos `T1, T2, ...`.
+- Vector de instrucciones `Instruccion3D` con operador y operandos `Symbol`.
+- Representación en cuádruplas `(OP, ARG1, ARG2, RES)` y ejecución simulada con `InterpreteC3D`.
+
+### D. Generación de Assembly GNU x86-64 (Sintaxis AT&T)
+`GnuAssemblyGenerator` implementa la traducción directa desde la lista de C3D:
+1. **Distribución del Stack Frame**:
+   - Cada variable y temporal tiene un slot de 8 bytes en `-8 * i (%rbp)`.
+   - Prólogo: `enter $(8 * N), $0` donde `N` es la suma de variables y temporales.
+2. **Uso de Registros**:
+   - Carga de operandos en `%r10` y `%r11` desde inmediatos (`$val`) o pila (`-offset(%rbp)`).
+   - Operaciones:
+     - Suma: `add %r11, %r10`
+     - Resta: `sub %r11, %r10`
+     - Multiplicación: `imul %r11, %r10`
+     - División: `mov %r10, %rax; cqo; idivq %r11; mov %rax, %r10`
+   - Almacenamiento: `mov %r10, -offset(%rbp)`.
+3. **Retorno y Epílogo**:
+   - Carga del valor en `%rax`.
+   - Epílogo: `leave` y `ret`.
 
 ---
 
-## 4. Guía de Ejecución y Programas de Prueba
+## 4. Pruebas y Validación del Sistema
 
-### A. Compilación del Compilador
+### A. Ejecución Integral del Pipeline
 ```powershell
-.\compilar.ps1
+.\ejecutar.ps1 src\programa_prueba.txt
 ```
-*(o `compilar.bat` en Windows CMD)*
+Genera los archivos `src/programa_prueba.c3d`, `src/programa_prueba.asm` y `src/programa_prueba.s`.
 
----
+### B. Pruebas de Errores Semánticos
+```powershell
+.\ejecutar.ps1 src\prueba_error_redeclaracion.txt
+.\ejecutar.ps1 src\prueba_error_no_declarada.txt
+.\ejecutar.ps1 src\prueba_error_tipo_asignacion.txt
+.\ejecutar.ps1 src\prueba_error_tipo_operacion.txt
+```
 
-### B. Pruebas de Validación de los 3 Errores de Compilación
-
-1. **Prueba de Variable Redeclarada**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_error_redeclaracion.txt
-   ```
-   *Salida esperada:*
-   ```
-   --- Errores Semanticos de Compilacion ---
-   [VARIABLE REDECLARADA] (linea 4): la variable 'x' ya fue declarada previamente.
-   ```
-
-2. **Prueba de Variable Inexistente / No Declarada**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_error_no_declarada.txt
-   ```
-   *Salida esperada:*
-   ```
-   --- Errores Semanticos de Compilacion ---
-   [VARIABLE NO DECLARADA] (linea 4): la variable 'y' no esta declarada.
-   [VARIABLE NO DECLARADA] (linea 5): la variable 'z' no esta declarada.
-   ```
-
-3. **Prueba de Error de Tipo en Asignación**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_error_tipo_asignacion.txt
-   ```
-   *Salida esperada:*
-   ```
-   --- Errores Semanticos de Compilacion ---
-   [ERROR DE TIPO] (linea 4): tipo incompatible en asignacion a 'x'. Se esperaba int pero se obtuvo bool.
-   [ERROR DE TIPO] (linea 5): tipo incompatible en asignacion a 'b'. Se esperaba bool pero se obtuvo int.
-   ```
-
-4. **Prueba de Error de Tipo en Operación Aritmética**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_error_tipo_operacion.txt
-   ```
-   *Salida esperada:*
-   ```
-   --- Errores Semanticos de Compilacion ---
-   [ERROR DE TIPO] (linea 5): el operador aritmetico '+' requiere enteros pero el lado izquierdo es bool.
-   ```
-
----
-
-### C. Pruebas de Código de Tres Direcciones (C3D)
-
-1. **Aritmética Compuesta con Temporales Sucesivos**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_c3d_aritmetica.txt
-   ```
-   *Muestra AST, Tabla de Símbolos, Ejecución AST, Código C3D, Tabla de Cuádruplas, Ejecución C3D y Seudo-Assembly. Genera automáticamente `prueba_c3d_aritmetica.c3d` y `prueba_c3d_aritmetica.asm`.*
-
-2. **Tipos Booleanos en C3D**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_c3d_bool.txt
-   ```
-
-3. **Filtro exclusivo para observar C3D**:
-   ```powershell
-   .\ejecutar.ps1 src\prueba_c3d_aritmetica.txt --c3d
-   ```
+### C. Visualización de Assembly GNU x86-64
+```powershell
+.\ejecutar.ps1 src\programa_prueba.txt --gnu
+```

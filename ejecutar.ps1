@@ -9,7 +9,7 @@ param(
 if (-not $Archivo) {
     Write-Host "Uso: .\ejecutar.ps1 <ruta_archivo> [opciones]" -ForegroundColor Yellow
     Write-Host "Ejemplo: .\ejecutar.ps1 src\programa_prueba.txt" -ForegroundColor Yellow
-    Write-Host "Opciones: --all, --ast, --semantic, --eval, --c3d, --asm"
+    Write-Host "Opciones: --all, --ast, --semantic, --eval, --c3d, --asm, --gnu, --pseudo"
     exit 1
 }
 
