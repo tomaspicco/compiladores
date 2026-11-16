@@ -56,6 +56,29 @@ public class Interpreter {
                 this.returnValue = null;
             }
             this.returned = true;
+        } else if (stmt instanceof IfStmtNode) {
+            IfStmtNode ifStmt = (IfStmtNode) stmt;
+            Object cond = evaluateExpr(ifStmt.getCondition());
+            if (Boolean.TRUE.equals(cond)) {
+                for (StatementNode s : ifStmt.getThenBranch()) {
+                    executeStatement(s);
+                    if (returned) break;
+                }
+            } else if (ifStmt.hasElse()) {
+                for (StatementNode s : ifStmt.getElseBranch()) {
+                    executeStatement(s);
+                    if (returned) break;
+                }
+            }
+        } else if (stmt instanceof WhileStmtNode) {
+            WhileStmtNode whileStmt = (WhileStmtNode) stmt;
+            while (Boolean.TRUE.equals(evaluateExpr(whileStmt.getCondition()))) {
+                for (StatementNode s : whileStmt.getBody()) {
+                    executeStatement(s);
+                    if (returned) break;
+                }
+                if (returned) break;
+            }
         }
     }
 
@@ -80,6 +103,12 @@ public class Interpreter {
             Object leftObj = evaluateExpr(bin.getLeft());
             Object rightObj = evaluateExpr(bin.getRight());
 
+            if (bin.getOperator() == BinaryExprNode.Operator.EQ) {
+                return (leftObj != null) && leftObj.equals(rightObj);
+            } else if (bin.getOperator() == BinaryExprNode.Operator.NEQ) {
+                return (leftObj == null) ? (rightObj != null) : !leftObj.equals(rightObj);
+            }
+
             if (!(leftObj instanceof Integer) || !(rightObj instanceof Integer)) {
                 throw new RuntimeException("Operacion sobre tipos no enteros.");
             }
@@ -99,6 +128,14 @@ public class Interpreter {
                         throw new ArithmeticException("Division por cero en linea " + bin.getLine());
                     }
                     return left / right;
+                case LT:
+                    return left < right;
+                case GT:
+                    return left > right;
+                case LE:
+                    return left <= right;
+                case GE:
+                    return left >= right;
                 default:
                     throw new UnsupportedOperationException("Operador desconocido: " + bin.getOperator());
             }

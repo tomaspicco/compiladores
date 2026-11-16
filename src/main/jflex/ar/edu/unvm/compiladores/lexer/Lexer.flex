@@ -46,6 +46,9 @@ ComentarioBloque  = "/*" [^*]* ~"*/" | "/*" "*"+ "/"
 "bool"          { return symbol(sym.BOOL); }
 "main"          { return symbol(sym.MAIN); }
 "return"        { return symbol(sym.RETURN); }
+"if"            { return symbol(sym.IF); }
+"else"          { return symbol(sym.ELSE); }
+"while"         { return symbol(sym.WHILE); }
 "true"          { return symbol(sym.TRUE); }
 "false"         { return symbol(sym.FALSE); }
 
@@ -58,6 +61,12 @@ ComentarioBloque  = "/*" [^*]* ~"*/" | "/*" "*"+ "/"
 "-"             { return symbol(sym.MENOS); }
 "*"             { return symbol(sym.POR); }
 "/"             { return symbol(sym.DIV); }
+"=="            { return symbol(sym.IGUAL_IGUAL); }
+"!="            { return symbol(sym.DISTINTO); }
+"<="            { return symbol(sym.MENOR_IGUAL); }
+">="            { return symbol(sym.MAYOR_IGUAL); }
+"<"             { return symbol(sym.MENOR); }
+">"             { return symbol(sym.MAYOR); }
 "="             { return symbol(sym.ASIGNACION); }
 
 /* ==== Delimitadores ==== */

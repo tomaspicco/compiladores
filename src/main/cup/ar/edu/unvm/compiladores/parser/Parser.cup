@@ -33,7 +33,9 @@ parser code {:
    TERMINALES (Tokens generados por el Lexer)
    =================================================================== */
 terminal VOID, INT, BOOL, MAIN, RETURN, TRUE, FALSE;
+terminal IF, ELSE, WHILE;
 terminal MAS, MENOS, POR, DIV, ASIGNACION;
+terminal MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL, IGUAL_IGUAL, DISTINTO;
 terminal PUNTOYCOMA, PAR_IZQ, PAR_DER, LLAVE_IZQ, LLAVE_DER;
 terminal Integer NRO;
 terminal String ID;
@@ -55,6 +57,8 @@ non terminal ExprNode expr;
 /* ===================================================================
    PRECEDENCIA
    =================================================================== */
+precedence left IGUAL_IGUAL, DISTINTO;
+precedence left MENOR, MAYOR, MENOR_IGUAL, MAYOR_IGUAL;
 precedence left MAS, MENOS;
 precedence left POR, DIV;
 
@@ -119,9 +123,21 @@ sentencias ::= sentencias:list sentencia:s
                :}
              ;
 
-/* Sentencia -> Asignacion | Retorno */
+/* Sentencia -> Asignacion | Retorno | Condicional (if / else) | Bucle (while) */
 sentencia ::= asignacion:a {: RESULT = a; :}
             | retorno:r    {: RESULT = r; :}
+            | IF PAR_IZQ expr:e PAR_DER LLAVE_IZQ sentencias:s LLAVE_DER
+              {:
+                 RESULT = new IfStmtNode(e, s, null, eleft, eright);
+              :}
+            | IF PAR_IZQ expr:e PAR_DER LLAVE_IZQ sentencias:s1 LLAVE_DER ELSE LLAVE_IZQ sentencias:s2 LLAVE_DER
+              {:
+                 RESULT = new IfStmtNode(e, s1, s2, eleft, eright);
+              :}
+            | WHILE PAR_IZQ expr:e PAR_DER LLAVE_IZQ sentencias:s LLAVE_DER
+              {:
+                 RESULT = new WhileStmtNode(e, s, eleft, eright);
+              :}
             ;
 
 /* Asignacion -> id = expr ; */
@@ -151,6 +167,18 @@ expr ::= expr:e1 MAS expr:e2
          {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.MUL, e1, e2, e1left, e1right); :}
        | expr:e1 DIV expr:e2
          {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.DIV, e1, e2, e1left, e1right); :}
+       | expr:e1 MENOR expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.LT, e1, e2, e1left, e1right); :}
+       | expr:e1 MAYOR expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.GT, e1, e2, e1left, e1right); :}
+       | expr:e1 MENOR_IGUAL expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.LE, e1, e2, e1left, e1right); :}
+       | expr:e1 MAYOR_IGUAL expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.GE, e1, e2, e1left, e1right); :}
+       | expr:e1 IGUAL_IGUAL expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.EQ, e1, e2, e1left, e1right); :}
+       | expr:e1 DISTINTO expr:e2
+         {: RESULT = new BinaryExprNode(BinaryExprNode.Operator.NEQ, e1, e2, e1left, e1right); :}
        | PAR_IZQ expr:e PAR_DER
          {: RESULT = e; :}
        | NRO:n

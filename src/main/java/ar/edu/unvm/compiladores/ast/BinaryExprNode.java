@@ -5,7 +5,13 @@ public class BinaryExprNode extends ExprNode {
         ADD("+"),
         SUB("-"),
         MUL("*"),
-        DIV("/");
+        DIV("/"),
+        LT("<"),
+        GT(">"),
+        LE("<="),
+        GE(">="),
+        EQ("=="),
+        NEQ("!=");
 
         private final String symbol;
 
@@ -15,6 +21,10 @@ public class BinaryExprNode extends ExprNode {
 
         public String getSymbol() {
             return symbol;
+        }
+
+        public boolean isComparison() {
+            return this == LT || this == GT || this == LE || this == GE || this == EQ || this == NEQ;
         }
 
         @Override

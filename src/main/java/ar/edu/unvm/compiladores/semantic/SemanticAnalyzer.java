@@ -174,6 +174,41 @@ public class SemanticAnalyzer {
                     ));
                 }
             }
+        } else if (stmt instanceof IfStmtNode) {
+            IfStmtNode ifStmt = (IfStmtNode) stmt;
+            analyzeExpr(ifStmt.getCondition());
+
+            if (ifStmt.getCondition().getInferredType() != null && ifStmt.getCondition().getInferredType() != Type.BOOL) {
+                errors.add(new CompilationError(
+                        ErrorType.ERROR_DE_TIPO,
+                        ifStmt.getLine(),
+                        "la condicion de la sentencia 'if' debe ser de tipo BOOL pero se obtuvo " + ifStmt.getCondition().getInferredType() + "."
+                ));
+            }
+
+            for (StatementNode s : ifStmt.getThenBranch()) {
+                analyzeStatement(s, programReturnType);
+            }
+            if (ifStmt.hasElse()) {
+                for (StatementNode s : ifStmt.getElseBranch()) {
+                    analyzeStatement(s, programReturnType);
+                }
+            }
+        } else if (stmt instanceof WhileStmtNode) {
+            WhileStmtNode whileStmt = (WhileStmtNode) stmt;
+            analyzeExpr(whileStmt.getCondition());
+
+            if (whileStmt.getCondition().getInferredType() != null && whileStmt.getCondition().getInferredType() != Type.BOOL) {
+                errors.add(new CompilationError(
+                        ErrorType.ERROR_DE_TIPO,
+                        whileStmt.getLine(),
+                        "la condicion de la sentencia 'while' debe ser de tipo BOOL pero se obtuvo " + whileStmt.getCondition().getInferredType() + "."
+                ));
+            }
+
+            for (StatementNode s : whileStmt.getBody()) {
+                analyzeStatement(s, programReturnType);
+            }
         }
     }
 
@@ -203,24 +238,54 @@ public class SemanticAnalyzer {
             Type leftType = bin.getLeft().getInferredType();
             Type rightType = bin.getRight().getInferredType();
 
-            if (leftType != null && leftType != Type.INT) {
-                errors.add(new CompilationError(
-                        ErrorType.ERROR_DE_TIPO,
-                        bin.getLine(),
-                        "el operador aritmetico '" + bin.getOperator()
-                                + "' requiere enteros pero el lado izquierdo es " + leftType + "."
-                ));
+            if (bin.getOperator().isComparison()) {
+                if (bin.getOperator() == BinaryExprNode.Operator.EQ || bin.getOperator() == BinaryExprNode.Operator.NEQ) {
+                    if (leftType != null && rightType != null && leftType != rightType) {
+                        errors.add(new CompilationError(
+                                ErrorType.ERROR_DE_TIPO,
+                                bin.getLine(),
+                                "el operador '" + bin.getOperator()
+                                        + "' requiere operandos del mismo tipo pero se obtuvo " + leftType + " y " + rightType + "."
+                        ));
+                    }
+                } else {
+                    if (leftType != null && leftType != Type.INT) {
+                        errors.add(new CompilationError(
+                                ErrorType.ERROR_DE_TIPO,
+                                bin.getLine(),
+                                "el operador relacional '" + bin.getOperator()
+                                        + "' requiere enteros pero el lado izquierdo es " + leftType + "."
+                        ));
+                    }
+                    if (rightType != null && rightType != Type.INT) {
+                        errors.add(new CompilationError(
+                                ErrorType.ERROR_DE_TIPO,
+                                bin.getLine(),
+                                "el operador relacional '" + bin.getOperator()
+                                        + "' requiere enteros pero el lado derecho es " + rightType + "."
+                        ));
+                    }
+                }
+                bin.setInferredType(Type.BOOL);
+            } else {
+                if (leftType != null && leftType != Type.INT) {
+                    errors.add(new CompilationError(
+                            ErrorType.ERROR_DE_TIPO,
+                            bin.getLine(),
+                            "el operador aritmetico '" + bin.getOperator()
+                                    + "' requiere enteros pero el lado izquierdo es " + leftType + "."
+                    ));
+                }
+                if (rightType != null && rightType != Type.INT) {
+                    errors.add(new CompilationError(
+                            ErrorType.ERROR_DE_TIPO,
+                            bin.getLine(),
+                            "el operador aritmetico '" + bin.getOperator()
+                                    + "' requiere enteros pero el lado derecho es " + rightType + "."
+                    ));
+                }
+                bin.setInferredType(Type.INT);
             }
-            if (rightType != null && rightType != Type.INT) {
-                errors.add(new CompilationError(
-                        ErrorType.ERROR_DE_TIPO,
-                        bin.getLine(),
-                        "el operador aritmetico '" + bin.getOperator()
-                                + "' requiere enteros pero el lado derecho es " + rightType + "."
-                ));
-            }
-
-            bin.setInferredType(Type.INT);
         }
     }
 }

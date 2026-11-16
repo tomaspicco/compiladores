@@ -1,0 +1,21 @@
+int main() {
+    int i;
+    int suma;
+    bool mayor;
+
+    i = 0;
+    suma = 0;
+
+    while (i < 5) {
+        suma = suma + i;
+        i = i + 1;
+    }
+
+    if (suma >= 10) {
+        mayor = true;
+    } else {
+        mayor = false;
+    }
+
+    return suma;
+}
