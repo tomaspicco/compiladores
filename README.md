@@ -241,5 +241,4 @@ $LASTEXITCODE
 ---
 
 ## Documentación Formal
-- 📄 **[INFORME_PREPROYECTO.md](INFORME_PREPROYECTO.md)**: Informe técnico formal de arquitectura, gramática y especificación.
-- 📄 **[GUIA_Y_CAMBIOS_PROYECTO.md](GUIA_Y_CAMBIOS_PROYECTO.md)**: Registro histórico detallado de decisiones de diseño y modificaciones.
+- 📄 **[INFORME_PREPROYECTO.md](INFORME_PREPROYECTO.md)**: Informe técnico formal de arquitectura, gramática y especificación para la cátedra.
