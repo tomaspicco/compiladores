@@ -3,7 +3,7 @@
 **Escuela de Ingeniería y Ciencias Ambientales — Cátedra de Compiladores**  
 
 > [!NOTE]
-> **Documento Guía Oficial del Proyecto:** Este `README.md` es la guía principal de estudio, comprensión teórica y ejecución práctica del compilador. Resume conceptualmente cada etapa del pipeline, documenta las dependencias, describe los programas de prueba y detalla todos los comandos de ejecución.
+> **Documento Guía Oficial del Proyecto:** Este `README.md` es la guía principal de comprensión teórica y ejecución práctica del compilador. Resume conceptualmente cada etapa del pipeline, documenta las dependencias, describe los programas de prueba y detalla todos los comandos de ejecución.
 
 ---
 
