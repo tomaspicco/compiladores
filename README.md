@@ -1,4 +1,4 @@
-# Guía de Estudio y Documento Guía: Fases de un Compilador
+# Documento Guía: Fases de un Compilador
 **Universidad Nacional de Villa Mercedes (UNViME)**  
 **Escuela de Ingeniería y Ciencias Ambientales — Cátedra de Compiladores**  
 
