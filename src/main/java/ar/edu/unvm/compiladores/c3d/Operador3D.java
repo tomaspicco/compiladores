@@ -8,8 +8,17 @@ public enum Operador3D {
     RESTA("-", "SUB"),
     MULT("*", "MUL"),
     DIV("/", "DIV"),
+    MENOR("<", "LT"),
+    MAYOR(">", "GT"),
+    MENOR_IGUAL("<=", "LE"),
+    MAYOR_IGUAL(">=", "GE"),
+    IGUAL_IGUAL("==", "EQ"),
+    DISTINTO("!=", "NEQ"),
     ASIGNACION("=", "ASSIGN"),
-    RETORNO("return", "RET");
+    RETORNO("return", "RET"),
+    LABEL("label", "LABEL"),
+    IF_FALSE("ifFalse", "IFFALSE"),
+    GOTO("goto", "GOTO");
 
     private final String signo;
     private final String mnemonico;

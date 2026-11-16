@@ -4,7 +4,7 @@ if not "%~1"=="" set ARCHIVO=%~1
 
 :MENU
 cls
-echo === Compilador UNVM ===
+echo === Compilador UNViME ===
 echo Archivo: %ARCHIVO%
 echo.
 echo 1. Lexer (Tokens)

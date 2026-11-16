@@ -110,7 +110,7 @@ public class GnuAssemblyGenerator {
     }
 
     private void registerSymbolSlot(Symbol sym) {
-        if (sym == null || sym.isConstant()) {
+        if (sym == null || sym.isConstant() || sym.isLabel()) {
             return;
         }
         String key = getSymbolKey(sym);
@@ -184,6 +184,52 @@ public class GnuAssemblyGenerator {
                 emit("    idivq %r11");
                 emit("    movq %rax, %r10");
                 storeResult(inst.getResultado(), "%r10");
+                break;
+            }
+
+            case MENOR:
+            case MAYOR:
+            case MENOR_IGUAL:
+            case MAYOR_IGUAL:
+            case IGUAL_IGUAL:
+            case DISTINTO: {
+                loadOperand(inst.getOperando1(), "%r10");
+                loadOperand(inst.getOperando2(), "%r11");
+                emit("    cmpq %r11, %r10");
+
+                String setInst;
+                switch (inst.getOperador()) {
+                    case MENOR: setInst = "setl"; break;
+                    case MAYOR: setInst = "setg"; break;
+                    case MENOR_IGUAL: setInst = "setle"; break;
+                    case MAYOR_IGUAL: setInst = "setge"; break;
+                    case IGUAL_IGUAL: setInst = "sete"; break;
+                    case DISTINTO: setInst = "setne"; break;
+                    default: setInst = "sete"; break;
+                }
+                emit("    " + setInst + " %al");
+                emit("    movzbq %al, %r10");
+                storeResult(inst.getResultado(), "%r10");
+                break;
+            }
+
+            case LABEL: {
+                String labelName = inst.getOperando1().getName();
+                emit("." + labelName + ":");
+                break;
+            }
+
+            case IF_FALSE: {
+                loadOperand(inst.getOperando1(), "%r10");
+                emit("    cmpq $0, %r10");
+                String labelName = inst.getOperando2().getName();
+                emit("    je ." + labelName);
+                break;
+            }
+
+            case GOTO: {
+                String labelName = inst.getOperando1().getName();
+                emit("    jmp ." + labelName);
                 break;
             }
 

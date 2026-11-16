@@ -4,7 +4,7 @@ param(
 
 while ($true) {
     Clear-Host
-    Write-Host "=== Compilador UNVM ==="
+    Write-Host "=== Compilador UNViME ==="
     Write-Host "Archivo: $Archivo`n"
     Write-Host "1. Lexer (Tokens)"
     Write-Host "2. Parser y AST"

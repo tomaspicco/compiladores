@@ -16,6 +16,7 @@ import ar.edu.unvm.compiladores.symbols.SymbolTable;
  */
 public class GeneradorC3D {
     private int tempCounter = 1;
+    private int labelCounter = 1;
     private final SymbolTable symbolTable;
 
     public GeneradorC3D(SymbolTable symbolTable) {
@@ -30,10 +31,18 @@ public class GeneradorC3D {
     }
 
     /**
+     * Genera una nueva etiqueta de salto (L1, L2, ...).
+     */
+    public Symbol nuevaEtiqueta() {
+        return Symbol.nuevaEtiqueta("L" + (labelCounter++));
+    }
+
+    /**
      * Recorre el AST y genera el vector de instrucciones de tres direcciones.
      */
     public CodigoTresDirecciones generar(ProgramNode program) {
         tempCounter = 1;
+        labelCounter = 1;
         CodigoTresDirecciones c3d = new CodigoTresDirecciones();
 
         for (StatementNode stmt : program.getStatements()) {
@@ -70,6 +79,45 @@ public class GeneradorC3D {
             } else {
                 c3d.insertar(new Instruccion3D(Operador3D.RETORNO, null, null, null));
             }
+        } else if (stmt instanceof IfStmtNode) {
+            IfStmtNode ifStmt = (IfStmtNode) stmt;
+            Symbol condSym = generarExpr(ifStmt.getCondition(), c3d);
+            Symbol lElse = ifStmt.hasElse() ? nuevaEtiqueta() : null;
+            Symbol lEnd = nuevaEtiqueta();
+
+            Symbol lFalse = ifStmt.hasElse() ? lElse : lEnd;
+            c3d.insertar(new Instruccion3D(Operador3D.IF_FALSE, condSym, lFalse, null));
+
+            for (StatementNode s : ifStmt.getThenBranch()) {
+                generarSentencia(s, c3d);
+            }
+
+            if (ifStmt.hasElse()) {
+                c3d.insertar(new Instruccion3D(Operador3D.GOTO, lEnd, null, null));
+                c3d.insertar(new Instruccion3D(Operador3D.LABEL, lElse, null, null));
+                for (StatementNode s : ifStmt.getElseBranch()) {
+                    generarSentencia(s, c3d);
+                }
+            }
+
+            c3d.insertar(new Instruccion3D(Operador3D.LABEL, lEnd, null, null));
+
+        } else if (stmt instanceof WhileStmtNode) {
+            WhileStmtNode whileStmt = (WhileStmtNode) stmt;
+            Symbol lStart = nuevaEtiqueta();
+            Symbol lEnd = nuevaEtiqueta();
+
+            c3d.insertar(new Instruccion3D(Operador3D.LABEL, lStart, null, null));
+
+            Symbol condSym = generarExpr(whileStmt.getCondition(), c3d);
+            c3d.insertar(new Instruccion3D(Operador3D.IF_FALSE, condSym, lEnd, null));
+
+            for (StatementNode s : whileStmt.getBody()) {
+                generarSentencia(s, c3d);
+            }
+
+            c3d.insertar(new Instruccion3D(Operador3D.GOTO, lStart, null, null));
+            c3d.insertar(new Instruccion3D(Operador3D.LABEL, lEnd, null, null));
         }
     }
 
@@ -113,6 +161,12 @@ public class GeneradorC3D {
                 case SUB: op = Operador3D.RESTA; break;
                 case MUL: op = Operador3D.MULT; break;
                 case DIV: op = Operador3D.DIV; break;
+                case LT: op = Operador3D.MENOR; break;
+                case GT: op = Operador3D.MAYOR; break;
+                case LE: op = Operador3D.MENOR_IGUAL; break;
+                case GE: op = Operador3D.MAYOR_IGUAL; break;
+                case EQ: op = Operador3D.IGUAL_IGUAL; break;
+                case NEQ: op = Operador3D.DISTINTO; break;
                 default:
                     throw new IllegalArgumentException("Operador desconocido en C3D: " + bin.getOperator());
             }

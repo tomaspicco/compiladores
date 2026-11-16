@@ -16,7 +16,8 @@ public class Symbol {
     public enum Kind {
         VARIABLE,
         TEMPORAL,
-        CONSTANTE
+        CONSTANTE,
+        ETIQUETA
     }
 
     private final String name;
@@ -75,6 +76,13 @@ public class Symbol {
         return new Symbol(String.valueOf(value), type, value, true, 0, 0, Kind.CONSTANTE);
     }
 
+    /**
+     * Fabrica para crear etiquetas de saltos en C3D (L1, L2, etc.).
+     */
+    public static Symbol nuevaEtiqueta(String name) {
+        return new Symbol(name, Type.VOID, null, true, 0, 0, Kind.ETIQUETA);
+    }
+
     public String getName() {
         return name;
     }
@@ -118,6 +126,10 @@ public class Symbol {
 
     public boolean isConstant() {
         return kind == Kind.CONSTANTE;
+    }
+
+    public boolean isLabel() {
+        return kind == Kind.ETIQUETA;
     }
 
     /**

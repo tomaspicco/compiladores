@@ -52,6 +52,12 @@ public class Instruccion3D {
             case RESTA:
             case MULT:
             case DIV:
+            case MENOR:
+            case MAYOR:
+            case MENOR_IGUAL:
+            case MAYOR_IGUAL:
+            case IGUAL_IGUAL:
+            case DISTINTO:
                 return String.format("%s = %s %s %s",
                         (resultado != null ? resultado.getDisplayName() : "?"),
                         (operando1 != null ? operando1.getDisplayName() : "?"),
@@ -67,6 +73,14 @@ public class Instruccion3D {
                 } else {
                     return "return";
                 }
+            case LABEL:
+                return (operando1 != null ? operando1.getName() : "?") + ":";
+            case IF_FALSE:
+                return String.format("ifFalse %s goto %s",
+                        (operando1 != null ? operando1.getDisplayName() : "?"),
+                        (operando2 != null ? operando2.getName() : "?"));
+            case GOTO:
+                return "goto " + (operando1 != null ? operando1.getName() : "?");
             default:
                 return operador + " " + operando1 + " " + operando2 + " " + resultado;
         }

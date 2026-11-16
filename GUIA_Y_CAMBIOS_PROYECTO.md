@@ -1,7 +1,7 @@
 # Guía Completa del Proyecto y Registro de Cambios
-**Universidad Nacional de Villa Mercedes (UNVM)**  
+**Universidad Nacional de Villa Mercedes (UNViME)**  
 **Escuela de Ingeniería y Ciencias Ambientales - Compiladores**  
-**Proyecto:** Compilador JFlex + CUP con AST, Tabla de Símbolos, Validación Semántica, C3D, Seudo-Assembly y Assembly GNU x86-64.
+**Proyecto:** Compilador JFlex + CUP con AST, Tabla de Símbolos, Validación Semántica, C3D, Seudo-Assembly, Assembly GNU x86-64 y GCC.
 
 ---
 
@@ -9,7 +9,7 @@
 
 El proyecto se encuentra ubicado físicamente en tu entorno:
 ```
-C:\Users\maxi\Desktop\DECOMPILER\compiladores
+C:\Users\Tomas\Desktop\compiladores
 ```
 
 ### Opciones para acceder y abrirlo:
@@ -18,33 +18,44 @@ C:\Users\maxi\Desktop\DECOMPILER\compiladores
 1. Presiona `Win + X` y selecciona **Terminal** o **PowerShell**.
 2. Escribe el comando para ingresar a la carpeta del proyecto:
    ```powershell
-   cd "C:\Users\maxi\Desktop\DECOMPILER\compiladores"
+   cd "C:\Users\Tomas\Desktop\compiladores"
    ```
 
 #### Opción B: Desde el Símbolo del Sistema (CMD)
 1. Presiona `Win + R`, escribe `cmd` y presiona Enter.
 2. Ingresa a la carpeta ejecutando:
    ```cmd
-   cd /d "C:\Users\maxi\Desktop\DECOMPILER\compiladores"
+   cd /d "C:\Users\Tomas\Desktop\compiladores"
    ```
 
 #### Opción C: Desde Visual Studio Code
 - Abre tu terminal y escribe:
    ```powershell
-   code "C:\Users\maxi\Desktop\DECOMPILER\compiladores"
+   code "C:\Users\Tomas\Desktop\compiladores"
    ```
 
 ---
 
 ## 2. Requisitos Previos para la Ejecución
 
-Para poder compilar y ejecutar el proyecto necesitas tener instalado Java Development Kit (JDK 8, 11, 17 o superior):
-- Verifica que `java` y `javac` estén accesibles abriendo una consola y escribiendo:
-  ```powershell
-  java -version
-  javac -version
-  ```
-Las librerías de JFlex (`jflex-full-1.9.1.jar`) y Java-CUP (`java-cup-11b-2015.03.26.jar` y `java-cup-11b-runtime.jar`) se encuentran integradas dentro de la carpeta `lib/` del proyecto.
+1. **Java Development Kit (JDK 8, 11, 17 o superior):**
+   - Verifica que `java` y `javac` estén accesibles abriendo una consola y escribiendo:
+     ```powershell
+     java -version
+     javac -version
+     ```
+   - Las librerías de JFlex (`jflex-full-1.9.1.jar`) y Java-CUP (`java-cup-11b-2015.03.26.jar` y `java-cup-11b-runtime.jar`) se encuentran integradas dentro de la carpeta `lib/` del proyecto.
+
+2. **GCC (GNU Compiler Collection - MinGW-w64):**
+   - Necesario para compilar a binario nativo (`.exe`) el código ensamblador GNU x86-64 (`.s`) generado en el Paso 6.
+   - Instalación rápida con `winget`:
+     ```powershell
+     winget install --id BrechtSanders.WinLibs.POSIX.UCRT
+     ```
+   - Verificar instalación:
+     ```powershell
+     gcc --version
+     ```
 
 ---
 
@@ -65,40 +76,62 @@ Formalizado en `SemanticAnalyzer.java`:
    *Ejemplo:* `[VARIABLE REDECLARADA] (linea 4): la variable 'x' ya fue declarada previamente.`
 2. **`VARIABLE_NO_DECLARADA`**: Detecta el uso de variables no declaradas, tanto en sentencias de asignación como en referencias dentro de expresiones.
    *Ejemplo:* `[VARIABLE NO DECLARADA] (linea 4): la variable 'y' no esta declarada.`
-3. **`ERROR_DE_TIPO`**: Verifica que los tipos coincidan en asignaciones, que los operadores aritméticos (`+`, `-`, `*`, `/`) solo operen con enteros, y que el tipo de retorno coincida con la firma de `main`.
-   *Ejemplo:* `[ERROR DE TIPO] (linea 4): tipo incompatible en asignacion a 'x'. Se esperaba int pero se obtuvo bool.`
+3. **`ERROR_DE_TIPO`**: Verifica que los tipos coincidan en asignaciones, que los operadores aritméticos (`+`, `-`, `*`, `/`) y relacionales solo operen sobre tipos compatibles, que la condición de `if` y `while` sea estrictamente `bool`, y que el tipo de retorno coincida con la firma de `main`.
+   *Ejemplos:*
+   - `[ERROR DE TIPO] (linea 4): tipo incompatible en asignacion a 'x'. Se esperaba int pero se obtuvo bool.`
+   - `[ERROR DE TIPO] (linea 5): la condicion de la sentencia 'if' debe ser de tipo BOOL pero se obtuvo int.`
 
 ### C. Implementación Completa de Código de Tres Direcciones (C3D)
 Ubicado en el paquete `ar.edu.unvm.compiladores.c3d`:
-1. **`Operador3D.java`**: Enum con operadores: `SUMA` (+, ADD), `RESTA` (-, SUB), `MULT` (*, MUL), `DIV` (/, DIV), `ASIGNACION` (=, ASSIGN) y `RETORNO` (return, RET).
+1. **`Operador3D.java`**: Enum con operadores aritméticos (`SUMA`, `RESTA`, `MULT`, `DIV`), de comparación (`MENOR`, `MAYOR`, `MENOR_IGUAL`, `MAYOR_IGUAL`, `IGUAL_IGUAL`, `DISTINTO`), de asignación (`ASIGNACION`), retorno (`RETORNO`) y de control de flujo (`LABEL`, `IF_FALSE`, `GOTO`).
 2. **`Instruccion3D.java`**: Cuádrupla que almacena `operador`, `operando1`, `operando2` y `resultado` como referencias directas a objetos `Symbol`, conservando la información semántica completa.
 3. **`CodigoTresDirecciones.java`**: Administra el vector dinámico de instrucciones (`Vector<Instruccion3D>`), ofreciendo métodos para listar instrucciones y generar la tabla de cuádruplas.
-4. **`GeneradorC3D.java`**: Recorre el AST en post-orden (**bottom-up: hojas a raíz**) resolviendo expresiones anidadas mediante variables temporales sucesivas (`T1, T2, T3, ...`).
-5. **`InterpreteC3D.java`**: Intérprete que recorre secuencialmente el vector de C3D para simular la ejecución.
+4. **`GeneradorC3D.java`**: Recorre el AST en post-orden (**bottom-up: hojas a raíz**) resolviendo expresiones anidadas mediante variables temporales sucesivas (`T1, T2, T3, ...`), y genera etiquetas y saltos para bifurcaciones y ciclos.
+5. **`InterpreteC3D.java`**: Intérprete que recorre el vector de C3D mediante tabla de etiquetas y contador de programa para simular la ejecución con saltos y bucles.
 
 ### D. Ampliación de la Clase `Symbol.java`
-- Clasificación por `Kind` (`VARIABLE`, `TEMPORAL`, `CONSTANTE`).
-- Métodos estáticos de fábrica: `nuevoTemporal(nombre, tipo)` y `nuevaConstante(valor, tipo)`.
-- Método `getDisplayName()` para visualización legible.
+- Clasificación por `Kind` (`VARIABLE`, `TEMPORAL`, `CONSTANTE`, `ETIQUETA`).
+- Métodos estáticos de fábrica: `nuevoTemporal(nombre, tipo)`, `nuevaConstante(valor, tipo)` y `nuevaEtiqueta(nombre)`.
+- Método `getDisplayName()` para visualización legible y `isLabel()` para no reservar slots en la pila.
 
-### E. Generación de Assembly GNU x86-64 a partir de C3D (64 bits)
+### E. Incorporación de Estructuras de Control (`if`, `if-else`, `while`) y Comparaciones
+1. **Léxico ([Lexer.flex](src/main/jflex/ar/edu/unvm/compiladores/lexer/Lexer.flex)):**
+   - Palabras reservadas agregadas: `"if"`, `"else"`, `"while"`.
+   - Operadores de comparación agregados: `"=="`, `"!="`, `"<="`, `">="`, `"<"`, `">"`.
+2. **Sintáctico y Gramática ([Parser.cup](src/main/cup/ar/edu/unvm/compiladores/parser/Parser.cup)):**
+   - Se formalizó la diferencia entre:
+     - **Sentencia:** Acción ejecutable (`asignacion`, `retorno`, `if`, `while`).
+     - **Expresión:** Evaluación que produce un valor único (literales, variables, operaciones aritméticas y relacionales).
+   - Reglas gramaticales explícitas con llaves obligatorias `{ ... }` para evitar cualquier ambigüedad sintáctica (*dangling else*):
+     ```cup
+     sentencia ::= asignacion | retorno
+                 | IF PAR_IZQ expr PAR_DER LLAVE_IZQ sentencias LLAVE_DER
+                 | IF PAR_IZQ expr PAR_DER LLAVE_IZQ sentencias LLAVE_DER ELSE LLAVE_IZQ sentencias LLAVE_DER
+                 | WHILE PAR_IZQ expr PAR_DER LLAVE_IZQ sentencias LLAVE_DER
+                 ;
+     ```
+3. **Nuevos Nodos del AST:**
+   - `IfStmtNode.java`: Condición, bloque `then` y bloque opcional `else`.
+   - `WhileStmtNode.java`: Condición y bloque de cuerpo `body`.
+   - Ambos extienden de `StatementNode` y cuentan con soporte visual en `printTree()`.
+4. **Intérprete del AST ([Interpreter.java](src/main/java/ar/edu/unvm/compiladores/interpreter/Interpreter.java)):**
+   - Ejecuta directamente bucles y condicionales evaluando la verdad de la condición y despachando las sentencias hijas.
+
+### F. Generación de Assembly GNU x86-64 y GCC (64 bits)
 Implementado en `GnuAssemblyGenerator.java` (`ar.edu.unvm.compiladores.codegen`) conforme a la directiva de cátedra y la guía técnica de arquitectura x86-64:
 1. **Traducción Instrucción por Instrucción**: Recorre secuencialmente la lista de instrucciones de tres direcciones generada en la fase previa.
 2. **Mapeo de Pila (Stack Frame)**:
    - Asigna a cada variable local y temporal una posición fija de 8 bytes (quadword) en el marco de pila: `-8(%rbp)`, `-16(%rbp)`, `-24(%rbp)`, etc.
-   - Calcula el total `N` de variables y temporales para configurar el prólogo: `enter $(8 * N), $0`.
-3. **Uso de Registros de Trabajo**:
-   - Utiliza exclusivamente los registros temporales `%r10` y `%r11` para cargar operandos desde la pila o inmediatos (`$val`), realizar la operación y guardar el resultado nuevamente en la pila.
-   - En la división (`idivq`), prepara el dividendo extendido en `%rax` mediante `cqo`.
+   - Alineación canónica a 16 bytes y prólogo: `pushq %rbp; movq %rsp, %rbp; subq $N, %rsp`.
+3. **Comparaciones y Saltos en Assembly**:
+   - `cmpq %r11, %r10` para comparar operandos en registros.
+   - Generación de booleano en `%al` con `setl`, `setg`, `setle`, `setge`, `sete`, `setne`.
+   - Extensión con `movzbq %al, %r10` y almacenamiento en pila.
+   - Saltos locales: `.L1:`, `jmp .L1` (salto incondicional), y `cmpq $0, %r10; je .L2` (salto condicional si falso).
 4. **Convención de Llamadas x86-64 GNU**:
-   - En sentencias de retorno (`return`), coloca el valor en `%rax` y ejecuta `leave` y `ret`.
-   - Incluye un epílogo por defecto (`mov $0, %rax; leave; ret`) para salidas seguras.
+   - Retorno en `%rax`.
+   - Epílogo: `movq %rbp, %rsp; popq %rbp; ret`.
    - Exporta el código generado en formato AT&T directamente al archivo fuente ensamblador `.s`.
-
-### F. Actualización del Flujo Principal en `Main.java`
-- Ejecuta el análisis semántico y AST con anotaciones resueltas.
-- Genera y muestra C3D, cuádruplas y ejecución con `InterpreteC3D`.
-- Genera y exporta el Seudo-Assembly (`.asm`) y el Assembly GNU x86-64 (`.s`).
 
 ---
 
@@ -133,103 +166,64 @@ Compilacion terminada.
 
 ### Paso 2: Ejecutar Pruebas con Pipeline Completo y Assembly GNU x86-64
 
-#### Prueba Principal: Expresiones Compuestas, C3D y Ensamblador GNU
+#### Prueba de Control de Flujo (`while` + `if/else`):
 - **Comando:**
   ```powershell
-  .\ejecutar.ps1 src\programa_prueba.txt
+  .\ejecutar.ps1 src\programa_prueba_control.txt
   ```
-- **Comando para ver exclusivamente el Assembly GNU x86-64:**
+- **Ver exclusivamente el Assembly GNU x86-64 generado:**
   ```powershell
-  .\ejecutar.ps1 src\programa_prueba.txt --gnu
+  .\ejecutar.ps1 src\programa_prueba_control.txt --gnu
   ```
-- **Salida de Assembly GNU x86-64:**
-  ```gas
-  .globl main
-  main:
-      enter $(8 * 6), $0
-      # Marco de pila (stack frame):
-      #   x          -> -8(%rbp)
-      #   y          -> -16(%rbp)
-      #   T1         -> -24(%rbp)
-      #   T2         -> -32(%rbp)
-      #   T3         -> -40(%rbp)
-      #   T4         -> -48(%rbp)
-
-      # x = 1
-      mov $1, %r10
-      mov %r10, -8(%rbp)
-
-      # T1 = 3 * 2
-      mov $3, %r10
-      mov $2, %r11
-      imul %r11, %r10
-      mov %r10, -24(%rbp)
-
-      # T2 = T1 * y
-      mov -24(%rbp), %r10
-      mov -16(%rbp), %r11
-      imul %r11, %r10
-      mov %r10, -32(%rbp)
-
-      # T3 = x + T2
-      mov -8(%rbp), %r10
-      mov -32(%rbp), %r11
-      add %r11, %r10
-      mov %r10, -40(%rbp)
-
-      # x = T3
-      mov -40(%rbp), %r10
-      mov %r10, -8(%rbp)
-
-      # return x
-      mov -8(%rbp), %rax
-      leave
-      ret
-  ```
-*(Genera automáticamente `src/programa_prueba.c3d`, `src/programa_prueba.asm` y `src/programa_prueba.s`).*
 
 ---
 
-### Paso 3: Validar los Tres Errores Semánticos de Compilación
+### Paso 3: Probar el Ejecutable Nativo con GCC
+
+Toma el archivo ensamblador generado en el paso anterior y compílalo directamente con GCC:
+
+```powershell
+# 1. Ensamblar y linkear con GCC
+gcc src\programa_prueba_control.s -o programa_control.exe
+
+# 2. Ejecutar el programa nativo de 64 bits
+.\programa_control.exe
+
+# 3. Verificar el valor de retorno retornado en %rax
+$LASTEXITCODE
+```
+*Salida esperada:*
+```
+10
+```
+
+---
+
+### Paso 4: Validar Detección de Errores Semánticos
 
 #### Error 1: Variable Redeclarada
 ```powershell
 .\ejecutar.ps1 src\prueba_error_redeclaracion.txt
 ```
-*Salida esperada:*
-```
-[VARIABLE REDECLARADA] (linea 4): la variable 'x' ya fue declarada previamente.
-```
+*Salida:* `[VARIABLE REDECLARADA] (linea 4): la variable 'x' ya fue declarada previamente.`
 
-#### Error 2: Variable No Declarada (Inexistente)
+#### Error 2: Variable No Declarada
 ```powershell
 .\ejecutar.ps1 src\prueba_error_no_declarada.txt
 ```
-*Salida esperada:*
-```
-[VARIABLE NO DECLARADA] (linea 4): la variable 'y' no esta declarada.
-[VARIABLE NO DECLARADA] (linea 5): la variable 'z' no esta declarada.
-```
+*Salida:* `[VARIABLE NO DECLARADA] (linea 4): la variable 'y' no esta declarada.`
 
-#### Error 3: Incompatibilidad de Tipos
+#### Error 3: Incompatibilidad de Tipos en Condición de Control
 ```powershell
-.\ejecutar.ps1 src\prueba_error_tipo_asignacion.txt
-.\ejecutar.ps1 src\prueba_error_tipo_operacion.txt
+.\ejecutar.ps1 src\prueba_error_condicion_tipo.txt
 ```
-*Salida esperada:*
-```
-[ERROR DE TIPO] (linea 4): tipo incompatible en asignacion a 'x'. Se esperaba int pero se obtuvo bool.
-[ERROR DE TIPO] (linea 5): tipo incompatible en asignacion a 'b'. Se esperaba bool pero se obtuvo int.
-```
+*Salida:* `[ERROR DE TIPO] (linea 5): la condicion de la sentencia 'if' debe ser de tipo BOOL pero se obtuvo int.`
 
 ---
 
-### Paso 4: Ejecución Paso a Paso y Menú Interactivo
-
-Para facilitar la comprensión y la defensa académica ante los docentes, se crearon scripts específicos para cada fase del compilador:
+### Paso 5: Menú Interactivo y Scripts Paso a Paso
 
 #### A. Menú Interactivo Completo
-Puedes lanzar el menú de consola para ejecutar cualquier paso de forma interactiva:
 ```powershell
 .\menu.ps1
 ```
@@ -239,12 +233,11 @@ Puedes lanzar el menú de consola para ejecutar cualquier paso de forma interact
 
 | Script PowerShell | Script CMD | Fase que ejecuta y muestra |
 | :--- | :--- | :--- |
-| `.\paso1_lexer.ps1` | `paso1_lexer.bat` | **Paso 1 / Punto 3:** Analizador Léxico (JFlex). Muestra la tabla de tokens, lexemas, líneas y columnas. |
-| `.\paso2_parser_ast.ps1` | `paso2_parser_ast.bat` | **Paso 2 / Puntos 4 y 5:** Parser CUP y Árbol Sintáctico (AST). Muestra la jerarquía con `VarDeclNode` y `VarUseNode`. |
+| `.\paso1_lexer.ps1` | `paso1_lexer.bat` | **Paso 1 / Punto 3:** Analizador Léxico (JFlex). Muestra tokens, lexemas, líneas y columnas. |
+| `.\paso2_parser_ast.ps1` | `paso2_parser_ast.bat` | **Paso 2 / Puntos 4 y 5:** Parser CUP y Árbol Sintáctico (AST). Muestra `VarDeclNode`, `VarUseNode`, `IfStmtNode`, `WhileStmtNode`. |
 | `.\paso3_semantica.ps1` | `paso3_semantica.bat` | **Paso 3:** Análisis Semántico. Valida los 3 errores e imprime la Tabla de Símbolos (`SymbolTable`). |
-| `.\paso4_interprete.ps1` | `paso4_interprete.bat` | **Paso 4 / Punto 6:** Intérprete/Evaluador del AST. Ejecuta las operaciones y muestra el valor final de memoria. |
-| `.\paso5_c3d.ps1` | `paso5_c3d.bat` | **Paso 5:** Código de Tres Direcciones. Muestra la lista C3D, la tabla de cuádruplas y la ejecución con `InterpreteC3D`. |
+| `.\paso4_interprete.ps1` | `paso4_interprete.bat` | **Paso 4 / Punto 6:** Intérprete del AST. Ejecuta paso a paso y muestra la memoria final. |
+| `.\paso5_c3d.ps1` | `paso5_c3d.bat` | **Paso 5:** Código de Tres Direcciones. Muestra la lista C3D, etiquetas, saltos y ejecución con `InterpreteC3D`. |
 | `.\paso6_assembly.ps1` | `paso6_assembly.bat` | **Paso 6 / Punto 7:** Generador Assembly GNU x86-64. Muestra el código ensamblador generado instrucción por instrucción. |
 
-*(Nota: En todos los scripts se puede indicar un archivo como parámetro, por ejemplo: `.\paso3_semantica.ps1 src\prueba_error_tipo_asignacion.txt`).*
-
+*(Nota: En todos los scripts se puede indicar un archivo como parámetro, por ejemplo: `.\paso3_semantica.ps1 src\prueba_error_condicion_tipo.txt`).*

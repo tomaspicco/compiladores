@@ -41,7 +41,7 @@ class NumberedCanvas(canvas.Canvas):
 
         self.setFont("Helvetica-Bold", 8)
         self.setFillColor(colors.HexColor("#1E3A8A"))
-        self.drawString(40, height - 30, "UNVM | ESCUELA DE INGENIERÍA Y CIENCIAS AMBIENTALES - CÁTEDRA DE COMPILADORES")
+        self.drawString(40, height - 30, "UNViME | ESCUELA DE INGENIERÍA Y CIENCIAS AMBIENTALES - CÁTEDRA DE COMPILADORES")
 
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor("#64748B"))
@@ -157,7 +157,7 @@ def build_pdf():
 
     info_data = [
         [
-            Paragraph("<b>Cátedra:</b> Compiladores<br/><b>Carrera:</b> Ingeniería en Sistemas de Información<br/><b>Institución:</b> Escuela de Ingeniería y Ciencias Ambientales (UNVM)", body_text),
+            Paragraph("<b>Cátedra:</b> Compiladores<br/><b>Carrera:</b> Ingeniería en Sistemas de Información<br/><b>Institución:</b> Escuela de Ingeniería y Ciencias Ambientales (UNViME)", body_text),
             Paragraph("<b>Componentes Clave:</b><br/>• Frontend: JFlex 1.9.1 + Java-CUP 11b<br/>• Verificación Semántica Estricta (3 categorías)<br/>• Generación de Código Intermedio (C3D Cuádruplas)<br/>• Backend: Assembly GNU x86-64 (Sintaxis AT&T)", body_text)
         ]
     ]
@@ -672,7 +672,7 @@ main:
     story.append(t_sum)
 
     story.append(Spacer(1, 35))
-    story.append(Paragraph("<font size='12' color='#1E3A8A'><b>Universidad Nacional de Villa Mercedes (UNVM) - Cátedra de Compiladores</b></font>", body_text))
+    story.append(Paragraph("<font size='12' color='#1E3A8A'><b>Universidad Nacional de Villa Mercedes (UNViME) - Cátedra de Compiladores</b></font>", body_text))
     story.append(Paragraph("Proyecto finalizado y verificado con éxito.", body_text))
 
     doc.build(story, canvasmaker=NumberedCanvas)
