@@ -116,7 +116,6 @@ gcc --version
 
 ---
 
-## Documentación y Presentación
-- 📄 **[Presentacion_Proyecto_Compiladores_UNVM.pdf](Presentacion_Proyecto_Compiladores_UNVM.pdf)**: Presentación de diapositivas para defender el proyecto en la cátedra.
+## Documentación
 - 📄 **[INFORME_PREPROYECTO.md](INFORME_PREPROYECTO.md)**: Informe técnico formal de arquitectura, gramática y especificación.
 - 📄 **[GUIA_Y_CAMBIOS_PROYECTO.md](GUIA_Y_CAMBIOS_PROYECTO.md)**: Registro histórico de modificaciones, decisiones de diseño y pruebas.
